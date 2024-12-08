@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import kafkaClient from '@repo/kafka/client';
 import prisma from '@repo/db/client';
 import { BALANCES } from '@repo/topics/topics';
+import { startTrackingContracts } from './contract';
 
 dotenv.config();
 
@@ -13,7 +14,7 @@ if (!API_KEY) {
 
 const alchemy = new Alchemy({
   apiKey: API_KEY,
-  network: Network.ETH_SEPOLIA,
+  network: Network.ETH_MAINNET,
 });
 
 const kafkaProducer = kafkaClient.getInstance().producer();
@@ -80,13 +81,14 @@ const trackTransactions = async () => {
         const toDiscordId = walletMap.get(toAddress);
 
         if (fromDiscordId || toDiscordId) {
-          const valueInEth = parseFloat(transaction.value) / 1e18;
-
+          console.log(transaction.value);
+          const valueInEth = transaction.value / 1e18;
+          console.log(valueInEth);
           const transactionData = {
             from: fromAddress,
             to: toAddress,
             value: valueInEth,
-            gas: transaction.gas,
+            gas: transaction.gas / 1e9,
             transactionHash: transaction.hash,
             discordId: fromDiscordId || toDiscordId,
           };
@@ -111,9 +113,11 @@ const startTracking = async () => {
     await initKafkaProducer();
     console.log('Starting to track transactions...');
     await trackTransactions();
+    await startTrackingContracts();
   } catch (error) {
     console.error('Error starting transaction tracking:', error);
   }
 };
 
 startTracking();
+// startTrackingContracts();
