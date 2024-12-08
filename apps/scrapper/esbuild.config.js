@@ -12,6 +12,7 @@ esbuild
       'nock',
       '@mapbox/node-pre-gyp',
       'bcrypt',
+      '@adraffy/ens-normalize',
     ],
   })
   .catch(() => process.exit(1));
