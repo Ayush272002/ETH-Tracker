@@ -16,6 +16,9 @@
     "tsc-watch": "^6.2.1"
   },
   "dependencies": {
+    "@repo/db": "*",
+    "@repo/kafka": "*",
+    "@repo/topics": "*",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
     "esbuild": "^0.24.0"
