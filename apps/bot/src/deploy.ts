@@ -1,10 +1,11 @@
 import { REST } from '@discordjs/rest';
 import { RESTPostAPIApplicationCommandsJSONBody, Routes } from 'discord.js';
-import { readdirSync } from 'fs';
 import { Command } from './handlers/commands';
+
 import { config } from 'dotenv';
 config();
-const { BOT_TOKEN, BOT_ID } = process.env;
+
+import { readdirSync } from 'fs';
 
 const deploy = async () => {
   const commands: RESTPostAPIApplicationCommandsJSONBody[] = [];
@@ -21,16 +22,18 @@ const deploy = async () => {
     commands.push(commandData);
   }
 
-  const rest = new REST({ version: '10' }).setToken(BOT_TOKEN as string);
+  const rest = new REST({ version: '10' }).setToken(
+    process.env.BOT_TOKEN as string
+  );
 
   try {
     console.log('Started refreshing application (/) commands.');
 
-    await rest.put(Routes.applicationCommands(BOT_ID as string), {
+    await rest.put(Routes.applicationCommands(process.env.BOT_ID as string), {
       body: [],
     });
 
-    await rest.put(Routes.applicationCommands(BOT_ID as string), {
+    await rest.put(Routes.applicationCommands(process.env.BOT_ID as string), {
       body: commands,
     });
 

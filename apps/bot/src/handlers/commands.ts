@@ -21,7 +21,7 @@ fs.readdirSync('dist/commands')
     commands.push(command);
   });
 
-const setup = (client: Client) => {
+const setup = async (client: Client) => {
   client.on('interactionCreate', onCommand);
 };
 
