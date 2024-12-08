@@ -6,19 +6,16 @@ import { BALANCES } from '@repo/topics/topics';
 
 dotenv.config();
 
-// Validate Alchemy API Key
 const API_KEY = process.env.ALCHEMY_SDK_API_KEY;
 if (!API_KEY) {
   throw new Error('Missing Alchemy API Key in .env file');
 }
 
-// Initialize Alchemy SDK
 const alchemy = new Alchemy({
   apiKey: API_KEY,
   network: Network.ETH_SEPOLIA,
 });
 
-// Initialize Kafka producer
 const kafkaProducer = kafkaClient.getInstance().producer();
 
 const initKafkaProducer = async () => {
@@ -31,7 +28,6 @@ const initKafkaProducer = async () => {
   }
 };
 
-// Send transaction data to Kafka
 const sendToKafka = async (transactionData: any) => {
   try {
     await kafkaProducer.send({
@@ -48,7 +44,6 @@ const sendToKafka = async (transactionData: any) => {
   }
 };
 
-// Track and process transactions
 const trackTransactions = async () => {
   alchemy.ws.on(
     {
@@ -58,14 +53,9 @@ const trackTransactions = async () => {
     },
     async (tx) => {
       try {
-        // Access the nested transaction object
         const transaction = tx.transaction;
-
-        // Extract addresses from the transaction object
         const fromAddress = transaction.from?.toLowerCase() || null;
         const toAddress = transaction.to?.toLowerCase() || null;
-
-        // console.log("Received transaction:", transaction);
 
         if (!fromAddress && !toAddress) {
           console.log(
@@ -75,17 +65,21 @@ const trackTransactions = async () => {
           return;
         }
 
-        // Fetch database wallets (use caching for optimization if necessary)
-        const wallets = await prisma.wallet.findMany();
-        const walletAddresses = wallets.map((wallet) =>
-          wallet.address.toLowerCase()
+        const wallets = await prisma.wallet.findMany({
+          include: { user: true },
+        });
+
+        const walletMap = new Map(
+          wallets.map((wallet) => [
+            wallet.address.toLowerCase(),
+            wallet.user.discordId,
+          ])
         );
 
-        // Check if the transaction involves any known wallets
-        if (
-          (fromAddress && walletAddresses.includes(fromAddress)) ||
-          (toAddress && walletAddresses.includes(toAddress))
-        ) {
+        const fromDiscordId = walletMap.get(fromAddress);
+        const toDiscordId = walletMap.get(toAddress);
+
+        if (fromDiscordId || toDiscordId) {
           const valueInEth = parseFloat(transaction.value) / 1e18;
 
           const transactionData = {
@@ -94,6 +88,7 @@ const trackTransactions = async () => {
             value: valueInEth,
             gas: transaction.gas,
             transactionHash: transaction.hash,
+            discordId: fromDiscordId || toDiscordId,
           };
 
           await sendToKafka(transactionData);
@@ -111,7 +106,6 @@ const trackTransactions = async () => {
   );
 };
 
-// Start tracking transactions
 const startTracking = async () => {
   try {
     await initKafkaProducer();
