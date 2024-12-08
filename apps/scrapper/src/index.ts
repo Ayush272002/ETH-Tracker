@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import kafkaClient from '@repo/kafka/client';
 import prisma from '@repo/db/client';
 import { BALANCES } from '@repo/topics/topics';
+import { startTrackingContracts } from './contract';
 
 dotenv.config();
 
@@ -111,6 +112,7 @@ const startTracking = async () => {
     await initKafkaProducer();
     console.log('Starting to track transactions...');
     await trackTransactions();
+    await startTrackingContracts();
   } catch (error) {
     console.error('Error starting transaction tracking:', error);
   }
