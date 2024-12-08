@@ -4,7 +4,6 @@ import {
   SlashCommandStringOption,
 } from 'discord.js';
 import prisma from '@repo/db/client';
-import { decrypt } from 'dotenv';
 import { getUser } from '../lib/db';
 import { Command } from '../handlers/commands';
 import { getDefaultEmbed, getErrorEmbed } from '../lib/embed';
