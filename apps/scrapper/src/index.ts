@@ -112,10 +112,10 @@ const startTracking = async () => {
     await initKafkaProducer();
     console.log('Starting to track transactions...');
     await trackTransactions();
-    await startTrackingContracts();
   } catch (error) {
     console.error('Error starting transaction tracking:', error);
   }
 };
 
 startTracking();
+startTrackingContracts();
