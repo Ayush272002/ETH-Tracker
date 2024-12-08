@@ -1,12 +1,11 @@
 import {
+  AutocompleteInteraction,
   CommandInteraction,
   SlashCommandBuilder,
   SlashCommandStringOption,
 } from 'discord.js';
 import prisma from '@repo/db/client';
-import { decrypt } from 'dotenv';
 import { getUser } from '../lib/db';
-import { Command } from '../handlers/commands';
 import { getDefaultEmbed, getErrorEmbed } from '../lib/embed';
 
 const execute = async (interaction: CommandInteraction) => {
@@ -23,21 +22,19 @@ const execute = async (interaction: CommandInteraction) => {
     return;
   }
 
-  if (
-    user.wallets.find((w) => w.address.toLowerCase() == address.toLowerCase())
-  ) {
+  const wallet = user.wallets.find((w) => w.address == address);
+  if (!wallet) {
     await interaction.reply({
       embeds: [
-        getErrorEmbed().setDescription('You already are tracking this wallet'),
+        getErrorEmbed().setDescription('You are not tracking this wallet'),
       ],
     });
     return;
   }
 
-  await prisma.wallet.create({
-    data: {
-      address: address,
-      userId: user.id,
+  await prisma.wallet.delete({
+    where: {
+      id: wallet.id,
     },
   });
 
@@ -45,22 +42,38 @@ const execute = async (interaction: CommandInteraction) => {
     embeds: [
       getDefaultEmbed()
         .setTitle(':tada: Success')
-        .setDescription('You started tracking `' + address + '`'),
+        .setDescription('You stopped tracking `' + address + '`'),
     ],
   });
 };
 
+const autocomplete = async (interaction: AutocompleteInteraction) => {
+  const user = await getUser(interaction.user.id);
+  const focused = interaction.options.getFocused();
+
+  await interaction.respond(
+    user.wallets
+      .filter((w) => w.address.startsWith(focused))
+      .map((w) => ({
+        name: w.address,
+        value: w.address,
+      }))
+  );
+};
+
 const command = new SlashCommandBuilder()
-  .setName('watch')
-  .setDescription('Watch an address')
+  .setName('unwatch')
+  .setDescription('Stop watching an address')
   .addStringOption((option: SlashCommandStringOption) =>
     option
       .setName('address')
-      .setDescription('The address to watch')
+      .setDescription('The address to stop watching')
       .setRequired(true)
+      .setAutocomplete(true)
   );
 
 export default {
   execute,
+  autocomplete,
   command: command as SlashCommandBuilder,
-} satisfies Command;
+};

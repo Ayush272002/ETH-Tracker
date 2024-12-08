@@ -21,8 +21,10 @@ model User {
 }
 
 model Wallet {
-  id           Int           @id @default(autoincrement())
-  userId       Int
-  user         User          @relation(fields: [userId], references: [id])
-  address      String        @unique
+  id      Int    @id @default(autoincrement())
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id])
+  address String
+
+  @@unique([userId, address])
 }

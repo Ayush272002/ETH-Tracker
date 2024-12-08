@@ -1,5 +1,6 @@
 import {
   ApplicationCommand,
+  AutocompleteInteraction,
   Client,
   CommandInteraction,
   Interaction,
@@ -9,6 +10,7 @@ import fs from 'fs';
 
 export type Command = {
   execute: (interaction: CommandInteraction) => {};
+  autocomplete?: (interaction: AutocompleteInteraction) => {} | undefined;
   command: SlashCommandBuilder;
 };
 
@@ -21,19 +23,27 @@ fs.readdirSync('dist/commands')
     commands.push(command);
   });
 
-const setup = (client: Client) => {
-  client.on('interactionCreate', onCommand);
+const setup = async (client: Client) => {
+  client.on('interactionCreate', onInteraction);
 };
 
-const onCommand = (interaction: Interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-  console.log(interaction.commandName);
-  commands.forEach((command) => {
-    if (command.command.name == interaction.commandName) {
-      console.log('name matches');
-      command.execute(interaction);
-    }
-  });
+const onInteraction = (interaction: Interaction) => {
+  if (interaction.isChatInputCommand()) {
+    commands.forEach((command) => {
+      if (command.command.name == interaction.commandName) {
+        command.execute(interaction);
+      }
+    });
+  } else if (interaction.isAutocomplete()) {
+    commands.forEach((command) => {
+      if (
+        command.autocomplete &&
+        command.command.name == interaction.commandName
+      ) {
+        command.autocomplete(interaction);
+      }
+    });
+  }
 };
 
 export { setup };
