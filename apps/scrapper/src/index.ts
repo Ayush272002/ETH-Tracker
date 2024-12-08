@@ -14,7 +14,7 @@ if (!API_KEY) {
 
 const alchemy = new Alchemy({
   apiKey: API_KEY,
-  network: Network.ETH_SEPOLIA,
+  network: Network.ETH_MAINNET,
 });
 
 const kafkaProducer = kafkaClient.getInstance().producer();
@@ -81,13 +81,14 @@ const trackTransactions = async () => {
         const toDiscordId = walletMap.get(toAddress);
 
         if (fromDiscordId || toDiscordId) {
-          const valueInEth = parseFloat(transaction.value) / 1e18;
-
+          console.log(transaction.value);
+          const valueInEth = transaction.value / 1e18;
+          console.log(valueInEth);
           const transactionData = {
             from: fromAddress,
             to: toAddress,
             value: valueInEth,
-            gas: transaction.gas,
+            gas: transaction.gas / 1e9,
             transactionHash: transaction.hash,
             discordId: fromDiscordId || toDiscordId,
           };
@@ -119,4 +120,4 @@ const startTracking = async () => {
 };
 
 startTracking();
-startTrackingContracts();
+// startTrackingContracts();
