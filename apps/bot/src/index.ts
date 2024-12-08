@@ -1,13 +1,20 @@
-import { Client, GatewayIntentBits } from "discord.js";
-import { config } from "dotenv";
+import { Client, GatewayIntentBits } from 'discord.js';
+import { config } from 'dotenv';
 config();
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
-});
+import { setup as setupCommands } from './handlers/commands';
 
-client.login(process.env.BOT_TOKEN);
+const main = async () => {
+  const client = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+    ],
+  });
+
+  await client.login(process.env.BOT_TOKEN);
+  await setupCommands(client);
+};
+
+main();

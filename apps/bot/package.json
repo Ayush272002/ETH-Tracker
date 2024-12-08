@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build": "tsc -b",
+    "build": "node esbuild.config.js",
+    "deploy": "node dist/deploy.js",
     "start": "node dist/index.js",
     "dev": "tsc-watch --onSuccess \"npm run build && npm run start\""
   },
@@ -16,6 +17,7 @@
   },
   "dependencies": {
     "discord.js": "^14.16.3",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "esbuild": "^0.24.0"
   }
 }
