@@ -1,8 +1,7 @@
-import { Alchemy, Network, AlchemySubscription } from 'alchemy-sdk';
+import { Alchemy, Network } from 'alchemy-sdk';
 import { getCreateAddress } from 'ethers';
 import dotenv from 'dotenv';
 import kafkaClient from '@repo/kafka/client';
-import prisma from '@repo/db/client';
 import { CONTRACTS } from '@repo/topics/topics';
 
 dotenv.config();
