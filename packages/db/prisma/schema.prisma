@@ -16,7 +16,6 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   discordId String   @unique
-  username  String?
   wallets   Wallet[]
   createdAt DateTime @default(now())
 }
@@ -26,28 +25,4 @@ model Wallet {
   userId       Int
   user         User          @relation(fields: [userId], references: [id])
   address      String        @unique
-  createdAt    DateTime      @default(now())
-  transactions Transaction[]
-}
-
-model Transaction {
-  id              Int            @id @default(autoincrement())
-  walletId        Int
-  wallet          Wallet         @relation(fields: [walletId], references: [id])
-  transactionHash String         @unique
-  fromAddress     String
-  toAddress       String
-  value           Float
-  status          String         @default("pending")
-  createdAt       DateTime       @default(now())
-  Notification    Notification[]
-}
-
-model Notification {
-  id            Int         @id @default(autoincrement())
-  transactionId Int
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
-  channelId     String
-  sentAt        DateTime    @default(now())
-  status        String      @default("success")
 }
