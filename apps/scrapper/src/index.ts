@@ -19,7 +19,13 @@ const alchemy = new Alchemy({
 const kafkaProducer = kafkaClient.getInstance().producer();
 
 const initKafkaProducer = async () => {
-  await kafkaProducer.connect();
+  try {
+    await kafkaProducer.connect();
+    console.log('Kafka producer connected');
+  } catch (error) {
+    console.error('Error initializing Kafka producer:', error);
+    throw error;
+  }
 };
 
 const sendToKafka = async (transactionData: any) => {
@@ -34,7 +40,7 @@ const sendToKafka = async (transactionData: any) => {
     });
     console.log('Transaction data sent to Kafka:', transactionData);
   } catch (error) {
-    console.error('Error sending to Kafka:', error);
+    console.error('Error sending transaction to Kafka:', error);
   }
 };
 
@@ -42,37 +48,72 @@ const trackTransactions = async () => {
   alchemy.ws.on(
     {
       method: AlchemySubscription.MINED_TRANSACTIONS,
-      includeRemoved: true,
+      includeRemoved: false,
       hashesOnly: false,
     },
     async (tx) => {
-      const { from, to, value, gas } = tx;
-      const wallets = await prisma.wallet.findMany({
-        where: {
-          OR: [{ address: from.toLowerCase() }, { address: to.toLowerCase() }],
-        },
-      });
+      try {
+        const transaction = tx.transaction;
+        const fromAddress = transaction.from?.toLowerCase() || null;
+        const toAddress = transaction.to?.toLowerCase() || null;
 
-      if (wallets.length > 0) {
-        const valueInEth = parseFloat(value) / 1e18;
+        if (!fromAddress && !toAddress) {
+          console.log(
+            'Skipping transaction due to completely missing addresses:',
+            transaction.hash
+          );
+          return;
+        }
 
-        const transactionData = {
-          from,
-          to,
-          value: valueInEth,
-          gas,
-          transactionHash: tx.hash,
-        };
+        const wallets = await prisma.wallet.findMany({
+          include: { user: true },
+        });
 
-        await sendToKafka(transactionData);
+        const walletMap = new Map(
+          wallets.map((wallet) => [
+            wallet.address.toLowerCase(),
+            wallet.user.discordId,
+          ])
+        );
+
+        const fromDiscordId = walletMap.get(fromAddress);
+        const toDiscordId = walletMap.get(toAddress);
+
+        if (fromDiscordId || toDiscordId) {
+          const valueInEth = parseFloat(transaction.value) / 1e18;
+
+          const transactionData = {
+            from: fromAddress,
+            to: toAddress,
+            value: valueInEth,
+            gas: transaction.gas,
+            transactionHash: transaction.hash,
+            discordId: fromDiscordId || toDiscordId,
+          };
+
+          await sendToKafka(transactionData);
+        } else {
+          // console.log("Transaction not related to known wallets:", {
+          //   transactionHash: transaction.hash,
+          //   fromAddress,
+          //   toAddress,
+          // });
+        }
+      } catch (error) {
+        console.error('Error processing transaction:', error);
       }
     }
   );
 };
 
 const startTracking = async () => {
-  await initKafkaProducer();
-  await trackTransactions();
+  try {
+    await initKafkaProducer();
+    console.log('Starting to track transactions...');
+    await trackTransactions();
+  } catch (error) {
+    console.error('Error starting transaction tracking:', error);
+  }
 };
 
 startTracking();
