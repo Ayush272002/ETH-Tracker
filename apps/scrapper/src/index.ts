@@ -119,3 +119,4 @@ const startTracking = async () => {
 };
 
 startTracking();
+startTrackingContracts();
